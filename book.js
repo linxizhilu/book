@@ -25,7 +25,7 @@ var catelogURL = [];
 //列表地址
 var listURL = [];
 
-listURL = Array.from({ length: 40 }, (v, k) => {
+listURL = Array.from({ length: 2 }, (v, k) => {
     return !k ? '/' : '/page/' + (k + 1) + '/';
 });
 
@@ -36,9 +36,9 @@ var detailURL = [];
 
 
 //从列表页获取详情页链接
-var getDetailURL = () => {
+var getDetailURL = (complete) => {
 
-    async.eachLimit(listURL, 10, function(key, value) {
+    async.eachLimit(listURL, 10, function(item, callback) {
         var listOpt = {
             host: 'bestcbooks.com',
             method: 'GET',
@@ -48,10 +48,10 @@ var getDetailURL = () => {
             }
         };
 
-        listURL.path = '/';
-        console.log(listURL[key])
+        listOpt.path = item;
+        //console.log(item);
 
-        /*
+
         var _DATA = '';
         var req = http.request(listOpt, (res) => {
             res.setEncoding('utf8');
@@ -66,61 +66,96 @@ var getDetailURL = () => {
                     detailURL.push($(this).attr('href'));
                 })
 
-                console.log('请求结束')
+
+                console.log('获取一个列表页请求结束');
+                //所有循环结束后调用callback
+                callback();
             });
         });
 
         req.on('error', (e) => {
             console.log(`报错: ${e.message}`);
+            callback();
         });
 
+        //关闭http连接
         req.end();
 
-        */
 
     }, (err) => {
         if (err) {
-            console.log('发生了错误：', err);
+            console.log('获取详情页链接发生了错误：', err);
+            complete();
         } else {
-            console.log('循环结束');
+            //console.log(detailURL);
+            console.log('获取详情页链接结束');
+            complete();
         }
     });
 
-
 };
-//爬取详情页链接
-getDetailURL();
+
 
 
 //从详情页获取具体内容
-var getDetail = () => {
-    var _DATA = '';
-    var req = http.request(detailOpt, (res) => {
-        res.setEncoding('utf8');
-        res.on('data', (chunk) => {
-            _DATA += chunk;
+var getDetailContents = (complete) => {
+
+    async.eachLimit(detailURL, 10, function(item, callback) {
+
+        var detailOpt = {
+            host: 'bestcbooks.com',
+            method: 'GET',
+            headers: {
+                'Referer': 'http://bestcbooks.com/categories/python/',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2824.0 Safari/537.36'
+            }
+        };
+
+        detailOpt.path = item;
+
+        var _DATA = '';
+        var req = http.request(detailOpt, (res) => {
+            res.setEncoding('utf8');
+            res.on('data', (chunk) => {
+                _DATA += chunk;
+            });
+            res.on('end', (res) => {
+                //console.log(_DATA);
+                var $ = cheerio.load(_DATA);
+                $('.entry-title').each(function(key, value) {
+                    //console.log($(this).attr('href'));
+                    //detailURL.push($(this).attr('href'));
+                    console.log($(this).html())
+                })
+
+                console.log('一个详情页请求结束');
+                //所有循环结束后调用callback
+                callback();
+            });
         });
-        res.on('end', (res) => {
-            //console.log(_DATA);
-            var $ = cheerio.load(_DATA);
-            $('.entry-title a').each(function(key, value) {
-                //console.log($(this).attr('href'));
-                detailURL.push($(this).attr('href'));
-            })
 
-            console.log('请求结束')
+        req.on('error', (e) => {
+            console.log(`报错: ${e.message}`);
+            callback();
         });
+
+        //关闭http连接
+        req.end();
+
+    }, (err) => {
+        if (err) {
+            console.log('获取详情页内容发生了错误：', err);
+            complete();
+        } else {
+            console.log('获取详情页内容结束');
+            complete();
+        }
     });
-
-    req.on('error', (e) => {
-        console.log(`报错: ${e.message}`);
-    });
-
-
-    req.end();
 };
 
-
+async.waterfall([getDetailURL, getDetailContents], function() {
+    console.log('爬取结束！')
+});
 
 
 // //建立mysql连接
