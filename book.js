@@ -153,9 +153,9 @@ var getDetailContents = (complete) => {
     });
 };
 
-// async.waterfall([getDetailURL, getDetailContents], function() {
-//     console.log('爬取结束！')
-// });
+async.waterfall([getDetailURL, getDetailContents], function() {
+    console.log('爬取结束！')
+});
 
 
 // //建立mysql连接
