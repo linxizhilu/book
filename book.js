@@ -153,17 +153,19 @@ var getDetailContents = (complete) => {
     });
 };
 
-async.waterfall([getDetailURL, getDetailContents], function() {
-    console.log('爬取结束！')
-});
+// async.waterfall([getDetailURL, getDetailContents], function() {
+//     console.log('爬取结束！')
+// });
 
 
 // //建立mysql连接
-// connection.connect();
+connection.connect();
 
-// connection.query('SELECT * from bookdetail', (err, rows, fields) => {
-//     if (err) throw err;
-//     console.log(rows);
-// });
+var title="这里是标题";
 
-// connection.end();
+connection.query('INSERT INTO `bdetail` (btitle,decription,author,catalog,downloadURL) VALUES ("'+ title +'","这里是描述文字","我是作者","这里是目录","rsndm-6324")', (err, rows, fields) => {
+    if (err) throw err;
+    console.log(rows);
+});
+
+connection.end();
