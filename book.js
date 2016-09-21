@@ -163,7 +163,7 @@ connection.connect();
 
 var title="这里是标题";
 
-connection.query('INSERT INTO `bdetail` (btitle,decription,author,catalog,downloadURL) VALUES ("'+ title +'","这里是描述文字","我是作者","这里是目录","rsndm-6324")', (err, rows, fields) => {
+connection.query('INSERT INTO `bdetail` (btitle,decription,author,catalog,downloadURL) VALUES (?,?,?,?)',[ title,"这里是描述文字","我是作者","这里是目录","rsndm-6324"], (err, rows, fields) => {
     if (err) throw err;
     console.log(rows);
 });
