@@ -51,8 +51,6 @@ var getDetailURL = (complete) => {
             }
         };
 
-       
-
         var postDATA='startNum=0&dataLen=250&type=ajax&randoms=0.6396354265846644';
 
 
@@ -65,43 +63,58 @@ var getDetailURL = (complete) => {
             res.on('end', (res) => {
                 //console.log(_DATA);
                 var $ = cheerio.load(_DATA);
-               
-                console.log(_DATA);
+				//填充结果
+               detailURL=_DATA;
+                console.log('列表页结束');
+				
+				
                 //所有循环结束后调用callback
-               
+               complete();
             });
         });
 
         req.on('error', (e) => {
             console.log(`报错: ${e.message}`);
-            callback();
+            //callback();
         });
 
         req.write(postDATA);
 
         //关闭http连接
         req.end();
-
+		
+		
 
 };
 
-getDetailURL();
+//建立mysql连接
+connection.connect();
 
 //从详情页获取具体内容
 var getDetailContents = (complete) => {
 
     async.eachLimit(detailURL, 10, function(item, callback) {
-
+		console.log('详情页ing');
         var detailOpt = {
-            host: 'bestcbooks.com',
+            host: 'www1.w3cfuns.com',
             method: 'GET',
             headers: {
-                'Referer': 'http://bestcbooks.com/categories/python/',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2824.0 Safari/537.36'
+                'Referer': 'http://www1.w3cfuns.com/feres.php?do=picture&listtype=book',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2824.0 Safari/537.36',
+                'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'
             }
         };
 
-        detailOpt.path = item;
+        detailOpt.path = '/'+item.url;
+		
+		
+		var cacheDATA=[];
+		//缩略图
+		var thumb=item.pic;
+		//页面链接
+		var url=item.url;
+		
+		
 
         var _DATA = '';
         var req = http.request(detailOpt, (res) => {
@@ -110,17 +123,24 @@ var getDetailContents = (complete) => {
                 _DATA += chunk;
             });
             res.on('end', (res) => {
-                //console.log(_DATA);
+                console.log('详情页ing');
                 var $ = cheerio.load(_DATA);
-                $('.entry-title').each(function(key, value) {
-                    //console.log($(this).attr('href'));
-                    //detailURL.push($(this).attr('href'));
-                    console.log($(this).html())
-                })
-
+				
+				var bookcover=$('#w3cfuns_ShareBook img').attr('src');
+				var title=$('#w3cfuns_ShareBook td').eq(1).text().replace('书名：','');
+				var format=$('#w3cfuns_ShareBook td').eq(2).text().replace('类型：','');
+				var description=$('#w3cfuns_ShareBook td').eq(3).text().replace('简介：','');
+				var download=$('.t_f a').eq(0).attr('href');
+				
+				
+				cacheDATA.push(title,description,format,thumb,bookcover,download,url);
+				
+				storeData(cacheDATA,callback)
+				
+				
                 console.log('一个详情页请求结束');
                 //所有循环结束后调用callback
-                callback();
+                //callback();
             });
         });
 
@@ -143,19 +163,23 @@ var getDetailContents = (complete) => {
     });
 };
 
-// async.waterfall([getDetailURL, getDetailContents], function() {
-//     console.log('爬取结束！')
-// });
+//getDetailURL();
 
+var SQL='INSERT INTO `bookdetail` (title,description,format,thumb,bookcover,download,pageurl) VALUES (?,?,?,?,?,?,?)';
 
-// //建立mysql连接
-connection.connect();
+function storeData(DATA,storeCallback){
+	//存储数据
+	connection.query(SQL,DATA, (err, rows, fields) => {
+		if (err) throw err;
+		console.log('存储一条数据完成');
+		storeCallback&&storeCallback();
+	});
+}
 
-var title="这里是标题";
-
-connection.query('INSERT INTO `bdetail` (btitle,decription,author,catalog,downloadURL) VALUES ("'+ title +'","这里是描述文字","我是作者","这里是目录","rsndm-6324")', (err, rows, fields) => {
-    if (err) throw err;
-    console.log(rows);
+async.waterfall([getDetailURL, getDetailContents], function() {
+    console.log('爬取结束！');
+	connection.end();
 });
 
-connection.end();
+
+//connection.end();
