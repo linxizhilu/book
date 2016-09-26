@@ -23,8 +23,10 @@ var catelogURL = [];
 //列表地址
 var listURL = [];
 
-listURL = Array.from({ length: 2 }, (v, k) => {
-    return !k ? '/' : '/page/' + (k + 1) + '/';
+var baseListURL='http://zhannei.baidu.com/cse/search?p=75&s=16881955614253274760&entry=1';
+
+listURL = Array.from({ length: 75 }, (v, k) => {
+    return '/cse/search?p='+k+'&s=16881955614253274760&entry=1';
 });
 
 //console.log(listURL);
@@ -36,20 +38,17 @@ var detailURL = [];
 //从列表页获取详情页链接
 var getDetailURL = (complete) => {
 
-   // async.eachLimit(listURL, 10, function(item, callback) {
+   async.eachLimit(listURL, 3, function(item, callback) {
+	   
         var listOpt = {
-            host: 'www1.w3cfuns.com',
-            method: 'POST',
-            path:'/feres.php?do=picture&listtype=book',
+            host: 'zhannei.baidu.com',
+            method: 'GET',
+            path:item,
             headers: {
-                'Referer': 'http://www1.w3cfuns.com/feres.php?do=picture&listtype=book',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2824.0 Safari/537.36',
-                'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8',
-                'X-Requested-With':'XMLHttpRequest'
+                'Referer': 'http://www.pdfshu.org/',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2824.0 Safari/537.36'
             }
         };
-
-        var postDATA='startNum=0&dataLen=250&type=ajax&randoms=0.6396354265846644';
 
 
         var _DATA = '';
@@ -62,25 +61,37 @@ var getDetailURL = (complete) => {
                 //console.log(_DATA);
                 var $ = cheerio.load(_DATA);
 				//填充结果
-               detailURL=JSON.parse(_DATA);
+              $('#results .c-title a').each(function(){
+				detailURL.push($(this).attr('href'));
+			  })
                 console.log('列表页结束');
-				 console.log(detailURL.length);
-				
+				//console.log(detailURL.length);
                 //所有循环结束后调用callback
-               complete();
+               callback();
+			   
             });
         });
 
         req.on('error', (e) => {
             console.log(`报错: ${e.message}`);
-            //callback();
+            callback();
+			req.end();
         });
 
-        req.write(postDATA);
-
+       
         //关闭http连接
         req.end();
 		
+		
+   },(err) => {
+        if (err) {
+            console.log('获取列表页内容发生了错误：', err);
+            complete();
+        } else {
+            console.log('获取列表页内容结束');
+            complete();
+        }
+    });
 		
 
 };
@@ -91,32 +102,22 @@ connection.connect();
 //从详情页获取具体内容
 var getDetailContents = (complete) => {
 
-    //console.log(detailURL)
 
-    async.eachLimit(detailURL, 10, function(item, callback) {
+    async.eachLimit(detailURL, 3, function(item, callback) {
 		console.log('详情页ing'+item);
         var detailOpt = {
-            host: 'www1.w3cfuns.com',
+            host: 'www.pdfshu.org',
             method: 'GET',
             headers: {
-                'Referer': 'http://www1.w3cfuns.com/feres.php?do=picture&listtype=book',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2824.0 Safari/537.36',
-                'Content-Type':'application/x-www-form-urlencoded; charset=gbk'
+                'Referer': 'http://www.pdfshu.org/',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2824.0 Safari/537.36'
             }
         };
 
-        detailOpt.path = '/'+item.url;
+        detailOpt.path = item.substr(21);
 		
-		
-		var cacheDATA=[];
-		//缩略图
-		var thumb=item.pic;
-		//页面链接
-		var url=item.url;
-		
-		
-
         var _DATA =[];
+		
         var req = http.request(detailOpt, (res) => {
             res.setEncoding(null);
             res.on('data', (chunk) => {
@@ -124,26 +125,8 @@ var getDetailContents = (complete) => {
             });
             res.on('end', (res) => {
                 console.log('详情页ing');
-                var  gbkDATA=iconv.decode(_DATA,'gbk');
-				var gbkBuff=new Buffer(gbkDATA,'binary')
-                var  body=iconv.encode(gbkBuff,'utf-8');
-                var $ = cheerio.load(body);
-				
-				var bookcover=$('#w3cfuns_ShareBook img').attr('src');
-				var title=$('#w3cfuns_ShareBook td').eq(1).text().replace('书名：','');
-				var format=$('#w3cfuns_ShareBook td').eq(2).text().replace('类型：','');
-				var description=$('#w3cfuns_ShareBook td').eq(3).text().replace('简介：','');
-				var download=$('.t_f a').eq(0).attr('href');
+               
 
-
-                console.log(description)
-				
-				
-				//cacheDATA.push(title,description,format,thumb,bookcover,download,url);
-				
-				//storeData(cacheDATA,callback)
-				
-				
                 console.log('一个详情页请求结束');
                 //所有循环结束后调用callback
                 callback();
@@ -157,6 +140,9 @@ var getDetailContents = (complete) => {
 
         //关闭http连接
         req.end();
+		
+		
+		callback();
 
     }, (err) => {
         if (err) {
@@ -187,5 +173,3 @@ async.waterfall([getDetailURL, getDetailContents], function() {
 	connection.end();
 });
 
-
-//connection.end();
