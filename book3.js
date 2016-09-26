@@ -1,13 +1,11 @@
 'use strict';
 
 const http = require('http');
-const https = require('https');
-const fs = require('fs');
 const mysql = require('mysql');
 const cheerio = require('cheerio');
 const iconv = require('iconv-lite');
 const async = require('async');
-const request = require('request');
+
 
 //定义mysql连接选项
 const mysqlOpt = {
