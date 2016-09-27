@@ -75,7 +75,6 @@ var getDetailURL = (complete) => {
         req.on('error', (e) => {
             console.log(`报错: ${e.message}`);
             callback();
-			req.end();
         });
 
        
@@ -118,18 +117,44 @@ var getDetailContents = (complete) => {
 		
         var _DATA =[];
 		
+		var SQLData=[];
+		
         var req = http.request(detailOpt, (res) => {
-            res.setEncoding(null);
+            //res.setEncoding(null);
             res.on('data', (chunk) => {
                 _DATA.push(chunk);
             });
             res.on('end', (res) => {
                 console.log('详情页ing');
-               
+				_DATA=_DATA.toString('utf-8');
+               var $=cheerio.load(_DATA,{decodeEntities: false});
+			   
+			  //console.log(_DATA)
+			   
+			   var score=$('.vote-num').text().match(/(\d+)/g)[0];
+			   var title=$('.oh td').eq(0).find('a').last().text();
+			   var thumb=$('.oh td img').eq(0).attr('src');
+			   var format='PDF';
+			   var publicInfo=$('.oh tr').eq(2).find('td').html();
+			   var description=$('.main .mt40').eq(1).find('div').html();
+			   var catalog=$('.main .mt40').eq(2).find('div').html();
+			   /*
+			   console.log('score:-----------',score);
+			   console.log('title:-----------',title);
+			   console.log('thumb:-----------',thumb);
+			   console.log('description:-----------',description);
+			   console.log('catalog:-----------',catalog);
+			   */
+				SQLData.push(title,publicInfo,description,format,thumb,catalog,score,'http://www.pdfshu.org/');
+			   
 
                 console.log('一个详情页请求结束');
                 //所有循环结束后调用callback
-                callback();
+				
+				storeData(SQLData,function(){
+					 callback();
+				})
+               
             });
         });
 
@@ -141,35 +166,41 @@ var getDetailContents = (complete) => {
         //关闭http连接
         req.end();
 		
-		
-		callback();
+
 
     }, (err) => {
         if (err) {
             console.log('获取详情页内容发生了错误：', err);
-            complete();
+            complete&&complete();
         } else {
             console.log('获取详情页内容结束');
-            complete();
+            complete&&complete();
         }
     });
 };
 
+
 //getDetailURL();
 
-var SQL='INSERT INTO `bookdetail` (title,description,format,thumb,bookcover,download,pageurl) VALUES (?,?,?,?,?,?,?)';
+var SQL='INSERT INTO `bookdetail` (title,publicInfo,description,format,thumb,catalog,score,source) VALUES (?,?,?,?,?,?,?,?)';
 
 function storeData(DATA,storeCallback){
 	//存储数据
 	connection.query(SQL,DATA, (err, rows, fields) => {
-		if (err) throw err;
-		console.log('存储一条数据完成');
-		storeCallback&&storeCallback();
+		if (err){
+			throw err;
+		} else{
+			console.log('存储一条数据完成');
+			storeCallback&&storeCallback();
+		}
+		
 	});
 }
+
 
 async.waterfall([getDetailURL, getDetailContents], function() {
     console.log('爬取结束！');
 	connection.end();
 });
+
 
