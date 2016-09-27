@@ -85,10 +85,10 @@ var getDetailURL = (complete) => {
    },(err) => {
         if (err) {
             console.log('获取列表页内容发生了错误：', err);
-            complete();
+            complete&&complete();
         } else {
             console.log('获取列表页内容结束');
-            complete();
+            complete&&complete();
         }
     });
 		
@@ -130,30 +130,39 @@ var getDetailContents = (complete) => {
                var $=cheerio.load(_DATA,{decodeEntities: false});
 			   
 			  //console.log(_DATA)
-			   
-			   var score=$('.vote-num').text().match(/(\d+)/g)[0];
-			   var title=$('.oh td').eq(0).find('a').last().text();
-			   var thumb=$('.oh td img').eq(0).attr('src');
-			   var format='PDF';
-			   var publicInfo=$('.oh tr').eq(2).find('td').html();
-			   var description=$('.main .mt40').eq(1).find('div').html();
-			   var catalog=$('.main .mt40').eq(2).find('div').html();
-			   /*
-			   console.log('score:-----------',score);
-			   console.log('title:-----------',title);
-			   console.log('thumb:-----------',thumb);
-			   console.log('description:-----------',description);
-			   console.log('catalog:-----------',catalog);
-			   */
-				SQLData.push(title,publicInfo,description,format,thumb,catalog,score,'http://www.pdfshu.org/');
-			   
+			   try{
+				   
+				   
+				    var score=$('.vote-num').text().match(/(\d+)/g)[0];
+					   var title=$('.oh td').eq(0).find('a').last().text();
+					   var thumb=$('.oh td img').eq(0).attr('src');
+					   var format='PDF';
+					   var publicInfo=$('.oh tr').eq(2).find('td').html();
+					   var description=$('.main .mt40').eq(1).find('div').html();
+					   var catalog=$('.main .mt40').eq(2).find('div').html();
+					   /*
+					   console.log('score:-----------',score);
+					   console.log('title:-----------',title);
+					   console.log('thumb:-----------',thumb);
+					   console.log('description:-----------',description);
+					   console.log('catalog:-----------',catalog);
+					   */
+						SQLData.push(title,publicInfo,description,format,thumb,catalog,score,'http://www.pdfshu.org/');
+					   
 
-                console.log('一个详情页请求结束');
-                //所有循环结束后调用callback
-				
-				storeData(SQLData,function(){
-					 callback();
-				})
+						console.log('一个详情页请求结束');
+						//所有循环结束后调用callback
+						
+						storeData(SQLData,function(){
+							 callback();
+						})
+				   
+				   
+			   }catch (err)
+			   {
+				   callback()
+			   }
+			  
                
             });
         });
