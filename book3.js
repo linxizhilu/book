@@ -197,7 +197,9 @@ function storeData(DATA,storeCallback){
 	//存储数据
 	connection.query(SQL,DATA, (err, rows, fields) => {
 		if (err){
-			throw err;
+			console.log('存储出错');
+			callback();
+			//throw err;
 		} else{
 			console.log('存储一条数据完成');
 			storeCallback&&storeCallback();
