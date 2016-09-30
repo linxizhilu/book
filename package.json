@@ -1,15 +1,28 @@
 {
-  "name": "w3csky",
-  "version": "1.0.0",
-  "description": "w3csky.com",
-  "main": "book.js",
+  "name": "book.w3csky.com",
+  "version": "0.0.1",
+  "description": "book.w3csky.com",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/w3csky/w3csky/"
-  },
-  "author": "",
-  "license": "MIT"
+  "keywords": [
+    "tags"
+  ],
+  "author": "westooy",
+  "license": "MIT",
+  "devDependencies": {
+    "async": "^2.0.1",
+    "cheerio": "^0.22.0",
+    "ejs": "^2.5.1",
+    "express": "^4.14.0",
+    "iconv-lite": "^0.4.13",
+    "ioredis": "^2.3.0",
+    "mongodb": "^2.2.10",
+    "mongoose": "^4.6.1",
+    "mysql": "^2.11.1",
+    "node-zip": "^1.1.1",
+    "querystring": "^0.2.0",
+    "request": "^2.74.0"
+  }
 }
